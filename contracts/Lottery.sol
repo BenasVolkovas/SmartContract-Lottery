@@ -50,6 +50,7 @@ contract Lottery is Ownable {
 
     function endLottery() public onlyOwner {
         // Pseudorandom number
+        // !Research Chinlink VRF for getting random number!
         // uint256(
         //     keccak256(
         //         abi.encodePacked(
