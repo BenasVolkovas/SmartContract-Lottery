@@ -2,9 +2,10 @@
 pragma solidity ^0.8.10;
 
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+import "@chainlink/contracts/src/v0.8/VRFConsumerBase.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract Lottery is Ownable {
+contract Lottery is VRFConsumerBase, Ownable {
     address payable[] public players;
     uint256 public usdEntryFee;
     AggregatorV3Interface internal ethUsdPriceFeed;
@@ -15,11 +16,21 @@ contract Lottery is Ownable {
         CALCULATING_WINNER
     }
     LOTTERY_STATE public lotteryState;
+    uint256 public fee;
+    bytes32 public keyHash;
 
-    constructor(address _priceFeedAddress) {
+    constructor(
+        address _priceFeedAddress,
+        address _vrfCoordinator,
+        address _link,
+        uint256 _fee,
+        bytes32 _keyHash
+    ) VRFConsumerBase(_vrfCoordinator, _link) {
         usdEntryFee = 50 * (10**18);
         ethUsdPriceFeed = AggregatorV3Interface(_priceFeedAddress);
         lotteryState = LOTTERY_STATE.CLOSED;
+        fee = _fee;
+        keyHash = _keyHash;
     }
 
     function enter() public payable {
@@ -49,19 +60,18 @@ contract Lottery is Ownable {
     }
 
     function endLottery() public onlyOwner {
-        // Pseudorandom number
-        // !Research Chinlink VRF for getting random number!
-        // uint256(
-        //     keccak256(
-        //         abi.encodePacked(
-        //             (
-        //                 nonce, // nonce is predictable (aka, transactions number)
-        //                 msg.sender, // msg.sender is predictable
-        //                 block.difficulty, // can actually be manipulated by the miners!
-        //                 block.timestamp // timestamp is predictable
-        //             )
-        //         )
-        //     )
-        // ) % players.length;
+        lotteryState = LOTRETY_STATE.CALCULATING_WINNER;
+        bytes32 requestId = requestRandomness(keyHash, fee);
+    }
+
+    function fulfillRandomness(bytes32 _requestId, uin256 _randomness)
+        internal
+        override
+    {
+        require(
+            lotteryState == LOTTERY_STATE.CALCULATING_WINNER,
+            "You aren't there yet!"
+        );
+        require(_randomness > 0, "Random not found");
     }
 }
