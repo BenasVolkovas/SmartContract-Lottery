@@ -1,4 +1,12 @@
-from brownie import network, accounts, config, MockV3Aggregator, Contract
+from brownie import (
+    network,
+    accounts,
+    config,
+    Contract,
+    MockV3Aggregator,
+    VRFCoordinatorMock,
+    LinkToken,
+)
 
 DECIMALS = 8
 INITIAL_VALUE = 2000 * 10 ** 8
@@ -24,7 +32,11 @@ def get_account(index=None, id=None):
     return accounts.add(config["wallets"]["from_key"])
 
 
-contractToMock = {"eth_usd_price_feed": MockV3Aggregator}
+contractToMock = {
+    "eth_usd_price_feed": MockV3Aggregator,
+    "vrf_coordinator": VRFCoordinatorMock,
+    "link_token": LinkToken,
+}
 
 
 def get_contract(contract_name):
@@ -55,6 +67,7 @@ def get_contract(contract_name):
         contract = contractType[-1]
 
     else:
+        # On real network, not development
         contractAddress = config["networks"][network.show_active()][contract_name]
         # MockV3Aggregator._name & MockV3Aggregator.abi
         contract = Contract.from_abi(
