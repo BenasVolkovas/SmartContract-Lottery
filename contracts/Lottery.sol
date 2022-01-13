@@ -7,6 +7,8 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract Lottery is VRFConsumerBase, Ownable {
     address payable[] public players;
+    address payable public recentWinner;
+    uint256 public randomness;
     uint256 public usdEntryFee;
     AggregatorV3Interface internal ethUsdPriceFeed;
     // OPENED - 0, CLOSED - 1, CALCULATING_WINNER - 2
@@ -60,11 +62,11 @@ contract Lottery is VRFConsumerBase, Ownable {
     }
 
     function endLottery() public onlyOwner {
-        lotteryState = LOTRETY_STATE.CALCULATING_WINNER;
+        lotteryState = LOTTERY_STATE.CALCULATING_WINNER;
         bytes32 requestId = requestRandomness(keyHash, fee);
     }
 
-    function fulfillRandomness(bytes32 _requestId, uin256 _randomness)
+    function fulfillRandomness(bytes32 _requestId, uint256 _randomness)
         internal
         override
     {
@@ -73,5 +75,17 @@ contract Lottery is VRFConsumerBase, Ownable {
             "You aren't there yet!"
         );
         require(_randomness > 0, "Random not found");
+
+        // random number % players = index
+        uint256 indexOfWinner = _randomness % players.length;
+
+        // Send money to the winner
+        recentWinner = players[indexOfWinner];
+        recentWinner.transfer(address(this).balance);
+
+        // Reset the lottery
+        players = new address payable[](0);
+        lotteryState = LOTTERY_STATE.CLOSED;
+        randomness = _randomness;
     }
 }
