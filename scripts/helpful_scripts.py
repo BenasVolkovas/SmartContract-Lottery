@@ -3,6 +3,7 @@ from brownie import (
     accounts,
     config,
     Contract,
+    interface,
     MockV3Aggregator,
     VRFCoordinatorMock,
     LinkToken,
@@ -39,20 +40,21 @@ contractToMock = {
 }
 
 
+"""
+This function will grab the contract addresses from the brownie config if defined,
+otherwise, it will deploy a mock version of that contract, and
+return that mock contract.
+
+Args:
+    contract_name (string)
+
+Returns:
+    brownie.network.contract.ProjectContract: The most recently deployed
+    version of this contract.
+"""
+
+
 def get_contract(contract_name):
-    """
-    This function will grab the contract addresses from the brownie config if defined,
-    otherwise, it will deploy a mock version of that contract, and
-    return that mock contract.
-
-    Args:
-        contract_name (string)
-
-    Returns:
-        brownie.network.contract.ProjectContract: The most recently deployed
-        version of this contract.
-    """
-
     # Get the type from the contract name
     contractType = contractToMock[contract_name]
 
@@ -76,9 +78,24 @@ def get_contract(contract_name):
     return contract
 
 
+# Deploy needed mocks for local testing
 def deploy_mocks(decimals=DECIMALS, initial_value=INITIAL_VALUE):
     account = get_account()
     MockV3Aggregator.deploy(decimals, initial_value, {"from": account})
     linkToken = LinkToken.deploy({"from": account})
     VRFCoordinatorMock.deploy(linkToken.address, {"from": account})
     print("Mocks Deployed!")
+
+
+def fund_with_link(
+    contract_address, account=None, link_token=None, amount=100000000000000000
+):  # 0.1 LINK
+    account = account if account else get_account()
+    linkToken = link_token if link_token else get_contract("link_token")
+    tx = linkToken.transfer(contract_address, amount, {"from": account})
+    # linkTokenContract = interface.LinkTokenInterface(linkToken.address)
+    # tx = linkTokenContract.transfer(contract_address, amount, {"from": account})
+    tx.wait(1)
+    print("Funded contract!")
+
+    return tx

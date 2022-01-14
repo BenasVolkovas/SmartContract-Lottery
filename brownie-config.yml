@@ -7,6 +7,7 @@ compiler:
             - "@chainlink=smartcontractkit/chainlink-brownie-contracts@0.3.0"
             - "@openzeppelin=OpenZeppelin/openzeppelin-contracts@4.4.0"
 
+dotenv: .env
 networks:
     default: development
     development:
@@ -23,4 +24,4 @@ networks:
         eth_usd_price_feed: "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419"
 
 wallets:
-    from_key: ${PRIVATE_KEY}
+    from_key: ${METAMASK_PRIVATE_KEY}
